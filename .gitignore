@@ -1,0 +1,19 @@
+# Database dump & backup files
+*.sql
+*.sqlite
+*.db
+
+# Environment & credentials
+.env
+.env.local
+config.php
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db

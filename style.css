@@ -1,0 +1,177 @@
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background-color: #f2f2f2;
+    margin: 0;
+}
+.navbar {
+background-color: #1F4E79;
+height: 60px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 0 25px;
+
+}
+
+.menu-icon a {
+color: white;
+text-decoration: none;
+font-size: 20px;
+font-weight: bold;
+}
+
+.navbar-nav {
+list-style: none;
+display: flex;
+margin: 0;
+padding: 0;
+
+}
+.navbar-nav li{
+margin-left: 20px;
+}
+
+.navbar-nav a {
+color: white;
+text-decoration: none;
+font-size: 16px;
+}
+
+.navbar-nav a:hover {
+text-decoration: underline;
+
+}
+
+.logout a {
+font-weight: bold;
+
+}
+
+.side-nav {
+height: 100%;
+width: 0;
+position: fixed;
+z-index: 1;
+top: 0;
+left: 0;
+background-color: #163d5c;
+overflow-x: hidden;
+transition: 0.3s;
+padding-top: 60px;
+
+}
+
+.side-nav a {
+padding: 12px 25px;
+text-decoration: none;
+font-size: 18px;
+color: white;
+display: block;
+}
+
+.side-nav a:hover {
+    background-color: #285b86;
+}
+
+.btn-close{
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 30px;
+}
+.container {
+    width: 700px;
+    margin: 40px auto;
+    background-color: white;
+    border: 1px solid #ccc;
+    padding: 40px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.container h2 {
+text-align: center;
+font-size: 42px;
+margin-bottom: 25px;
+}
+
+.container p {
+    font-size: 24px;
+    text-align: center;
+}
+
+hr {
+border: 0;
+border-top: 1px solid #ddd;
+margin-bottom: 30px;
+}
+
+.submit {
+width: 100%;
+padding: 10px;
+background-color: #1F4E79;
+color: white;
+border: none;
+font-size: 16px;
+cursor: pointer;
+left: 0;
+}
+
+.submit:hover {
+    background-color: #163d5c;
+}
+
+.tambah {
+background-color: #4CAF50;
+border: none;
+color: white;
+padding: 10px 20px;
+font-size: 14px;
+cursor: pointer;
+}
+
+table{
+    border-collapse:  collapse;
+    width: 100%;
+    background-color: white;
+}
+
+th{
+    background-color: #1F4E79;
+    color: white;
+}
+
+th, td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+input[type=text]{
+    padding:8px;
+    width:250px;
+    align-items: center;
+}
+
+input[type=password]{
+    padding:8px;
+    width:250px;
+    align-items: center;
+}
+
+.search-button{
+    padding:8px 15px;
+    cursor:pointer;
+}
+
+img{
+    border-radius:8px;
+}
+
+.form-control{
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.reset-button{
+    padding: 8px 15px;
+    cursor: pointer;
+}
