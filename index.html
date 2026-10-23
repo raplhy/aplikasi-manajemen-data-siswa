@@ -3,49 +3,173 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistem Manajemen Data Siswa - SMKS PGRI 3 Malang</title>
+  <title>Sistem Informasi Data Siswa - SMKS PGRI 3 Malang</title>
   <link rel="stylesheet" href="style.css">
   <!-- Supabase JS CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-  <!-- Toast Container -->
+  <!-- Toast Notification Container -->
   <div id="toast-container" class="toast-container"></div>
 
   <!-- ========================================== -->
-  <!-- 1. LOGIN SCREEN                           -->
+  <!-- 1. PUBLIC USER VIEW (DEFAULT PORTAL)      -->
   <!-- ========================================== -->
-  <div id="login-screen" class="login-wrapper">
+  <div id="public-view" class="public-wrapper">
+    <!-- Public Navbar -->
+    <header class="public-navbar">
+      <div class="public-nav-container">
+        <div class="public-brand">
+          <div class="brand-logo-circle">🎓</div>
+          <div>
+            <h2>SMKS PGRI 3 MALANG</h2>
+            <span>Sistem Informasi Data Siswa & Program Keahlian</span>
+          </div>
+        </div>
+        <div class="public-nav-links">
+          <a href="#portal-stats" class="nav-item">Statistik</a>
+          <a href="#portal-siswa" class="nav-item">Data Siswa</a>
+          <a href="#portal-prodi" class="nav-item">Program Studi</a>
+          <button id="btn-go-admin" class="btn btn-primary btn-sm">
+            <span>Login Petugas</span> 🔐
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Public Hero -->
+    <section class="public-hero">
+      <div class="hero-content">
+        <span class="hero-pill">Portal Terbuka Siswa & Jurusan</span>
+        <h1>Direktori Data Siswa SMKS PGRI 3 Malang</h1>
+        <p>Akses informasi siswa aktif dan program keahlian secara transparan, akurat, dan realtime.</p>
+        
+        <div class="hero-search-bar">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="public-search-input" placeholder="Ketik nama siswa atau NIS untuk mencari...">
+          <button id="btn-public-search" class="btn btn-primary">Cari Siswa</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Public Stats Cards -->
+    <section id="portal-stats" class="public-section">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-info">
+            <p>Total Siswa Terdaftar</p>
+            <h3 id="public-stat-siswa">0</h3>
+          </div>
+          <div class="stat-icon icon-blue">👨‍🎓</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-info">
+            <p>Program Keahlian</p>
+            <h3 id="public-stat-prodi">0</h3>
+          </div>
+          <div class="stat-icon icon-purple">📚</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-info">
+            <p>Tahun Akademik</p>
+            <h3 style="font-size: 26px;">2025/2026</h3>
+          </div>
+          <div class="stat-icon icon-green">📅</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Public Student Directory -->
+    <section id="portal-siswa" class="public-section">
+      <div class="section-header">
+        <div>
+          <h2>Daftar Siswa SMKS PGRI 3</h2>
+          <p>Daftar data siswa aktif terdaftar pada sistem</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <select id="public-filter-prodi" class="form-select" style="max-width: 250px;">
+            <option value="">Semua Program Studi</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Foto</th>
+                <th>NIS</th>
+                <th>Nama Lengkap</th>
+                <th>Kelas</th>
+                <th>Tahun Ajaran</th>
+                <th>Program Studi</th>
+                <th>Gender</th>
+              </tr>
+            </thead>
+            <tbody id="public-tbody-siswa">
+              <tr><td colspan="7" style="text-align: center; padding: 30px;">Memuat data siswa...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Public Prodi Directory -->
+    <section id="portal-prodi" class="public-section" style="margin-bottom: 60px;">
+      <div class="section-header">
+        <div>
+          <h2>Program Studi & Kompetensi Keahlian</h2>
+          <p>Jurusan unggulan di SMKS PGRI 3 Malang</p>
+        </div>
+      </div>
+
+      <div class="prodi-cards-grid" id="public-prodi-cards">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- Public Footer -->
+    <footer class="public-footer">
+      <p>© 2026 SMKS PGRI 3 Malang - Sistem Informasi Manajemen Data Siswa</p>
+      <p style="font-size: 12px; margin-top: 4px; color: var(--text-muted);">
+        Akses admin dapat dilakukan dengan mengetikkan URL <code>/admin</code> atau <code>#admin</code>
+      </p>
+    </footer>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 2. ADMIN LOGIN SCREEN (/admin)             -->
+  <!-- ========================================== -->
+  <div id="login-screen" class="login-wrapper" style="display: none;">
     <div class="login-card">
       <div class="brand-header">
-        <div class="brand-icon">🎓</div>
-        <h2>PANEL LOGIN</h2>
-        <p>Sistem Manajemen Data Siswa SMKS PGRI 3</p>
+        <div class="brand-icon">🔐</div>
+        <h2>LOGIN ADMINISTRATOR</h2>
+        <p>Akses Khusus Pengelola Sistem Data Siswa</p>
       </div>
       <form id="login-form">
         <div class="form-group">
           <label class="form-label" for="login-username">Username</label>
-          <input type="text" id="login-username" class="form-input" placeholder="Masukkan username" required autocomplete="username">
+          <input type="text" id="login-username" class="form-input" placeholder="Masukkan username admin" required autocomplete="username">
         </div>
         <div class="form-group">
           <label class="form-label" for="login-password">Password</label>
           <input type="password" id="login-password" class="form-input" placeholder="Masukkan password" required autocomplete="current-password">
         </div>
         <button type="submit" class="btn btn-primary btn-block">
-          <span>Masuk ke Dashboard</span> →
+          <span>Masuk ke Dashboard Admin</span> →
+        </button>
+        <button type="button" id="btn-back-to-public" class="btn btn-secondary btn-block" style="margin-top: 10px;">
+          ← Kembali ke Halaman Publik
         </button>
       </form>
-
-      <div class="demo-credentials">
-        🔑 <strong>Akun Demo:</strong><br>
-        Username: <strong>admin</strong> | Password: <strong>admin123</strong>
-      </div>
     </div>
   </div>
 
   <!-- ========================================== -->
-  <!-- 2. MAIN APP LAYOUT (DASHBOARD)            -->
+  <!-- 3. ADMIN DASHBOARD LAYOUT                  -->
   <!-- ========================================== -->
   <div id="app-layout" class="app-layout" style="display: none;">
     <!-- Sidebar -->
@@ -54,7 +178,7 @@
         <div class="sidebar-logo">🎓</div>
         <div class="sidebar-title">
           <h3>SMKS PGRI 3</h3>
-          <span>Sistem Manajemen</span>
+          <span>Panel Administrator</span>
         </div>
       </div>
 
@@ -68,13 +192,13 @@
         <li>
           <a class="nav-link" data-view="siswa">
             <span class="icon">👨‍🎓</span>
-            <span>Data Siswa</span>
+            <span>Data Siswa (CRUD)</span>
           </a>
         </li>
         <li>
           <a class="nav-link" data-view="prodi">
             <span class="icon">📚</span>
-            <span>Program Studi</span>
+            <span>Program Studi (CRUD)</span>
           </a>
         </li>
         <li>
@@ -83,29 +207,34 @@
             <span>Database Cloud</span>
           </a>
         </li>
+        <li style="margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+          <a class="nav-link" id="btn-view-as-public">
+            <span class="icon">🌐</span>
+            <span>Lihat Tampilan Publik</span>
+          </a>
+        </li>
       </ul>
 
       <div class="sidebar-footer">
         <div class="user-profile">
-          <div class="avatar" id="user-avatar">A</div>
+          <div class="avatar" id="user-avatar">R</div>
           <div class="user-info">
-            <span class="name" id="user-display">Administrator</span>
-            <span class="role">Admin Utama</span>
+            <span class="name" id="user-display">raplhy</span>
+            <span class="role">Super Administrator</span>
           </div>
         </div>
         <button id="btn-logout" class="btn btn-danger btn-block btn-sm">
-          <span>Logout</span>
+          <span>Logout Admin</span>
         </button>
       </div>
     </aside>
 
     <!-- Main Wrapper -->
     <div class="main-wrapper">
-      <!-- Top Sticky Bar -->
       <header class="top-bar">
         <div style="display: flex; align-items: center; gap: 16px;">
           <button id="menu-toggle" class="menu-toggle" aria-label="Toggle menu">☰</button>
-          <span id="current-page-label" style="font-weight: 600; font-size: 15px; color: var(--text-secondary);">Dashboard</span>
+          <span id="current-page-label" style="font-weight: 600; font-size: 15px; color: var(--text-secondary);">Dashboard Administrator</span>
         </div>
         <div style="display: flex; align-items: center; gap: 12px;">
           <div id="db-status-badge" class="status-badge" title="Status koneksi database">
@@ -122,13 +251,12 @@
         <section id="view-home" class="page-view">
           <div class="page-header">
             <div class="page-title">
-              <h1 id="greeting-text">Selamat Datang!</h1>
+              <h1 id="greeting-text">Selamat Datang, raplhy!</h1>
               <p id="today-date-text">Memuat tanggal...</p>
             </div>
             <button class="btn btn-primary" id="btn-quick-add-siswa">+ Tambah Siswa Cepat</button>
           </div>
 
-          <!-- Stats Grid -->
           <div class="stats-grid">
             <div class="stat-card">
               <div class="stat-info">
@@ -153,12 +281,10 @@
             </div>
           </div>
 
-          <!-- Welcome Banner Card -->
           <div class="table-card" style="padding: 32px; background: linear-gradient(135deg, rgba(37,99,235,0.15), rgba(139,92,246,0.1));">
-            <h2 style="font-size: 22px; margin-bottom: 8px;">Aplikasi Manajemen Data Siswa SMKS PGRI 3 Malang</h2>
+            <h2 style="font-size: 22px; margin-bottom: 8px;">Panel Administrator Aktif</h2>
             <p style="color: var(--text-secondary); max-width: 700px; line-height: 1.6; margin-bottom: 20px;">
-              Aplikasi ini telah dimigrasikan dari PHP & MySQL menjadi <strong>Modern HTML5, CSS3 Glassmorphism, dan JavaScript (Supabase PostgreSQL Cloud)</strong>. 
-              Siap dideploy 100% tanpa error file download di Vercel atau GitHub Pages.
+              Anda saat ini masuk sebagai Administrator (<strong>raplhy</strong>). Anda memiliki hak penuh untuk menambah, mengubah, dan menghapus data siswa serta jurusan sekolah.
             </p>
             <div style="display: flex; gap: 12px; flex-wrap: wrap;">
               <button class="btn btn-primary" data-view-target="siswa">Kelola Data Siswa →</button>
@@ -167,12 +293,12 @@
           </div>
         </section>
 
-        <!-- VIEW: SISWA -->
+        <!-- VIEW: SISWA (ADMIN CRUD) -->
         <section id="view-siswa" class="page-view" style="display: none;">
           <div class="page-header">
             <div class="page-title">
               <h1>Kelola Data Siswa</h1>
-              <p>Daftar seluruh siswa SMKS PGRI 3 Malang</p>
+              <p>Tambah, edit, dan hapus data siswa SMKS PGRI 3 Malang</p>
             </div>
             <button class="btn btn-primary" id="btn-open-add-siswa">+ Tambah Siswa Baru</button>
           </div>
@@ -213,12 +339,12 @@
           </div>
         </section>
 
-        <!-- VIEW: PRODI -->
+        <!-- VIEW: PRODI (ADMIN CRUD) -->
         <section id="view-prodi" class="page-view" style="display: none;">
           <div class="page-header">
             <div class="page-title">
               <h1>Program Studi (Keahlian)</h1>
-              <p>Daftar program studi dan kompetensi keahlian</p>
+              <p>Kelola daftar program studi dan kompetensi keahlian</p>
             </div>
             <button class="btn btn-primary" id="btn-open-add-prodi">+ Tambah Prodi Baru</button>
           </div>
@@ -250,7 +376,7 @@
           </div>
         </section>
 
-        <!-- VIEW: SETTINGS (SUPABASE CLOUD CONFIG) -->
+        <!-- VIEW: SETTINGS -->
         <section id="view-settings" class="page-view" style="display: none;">
           <div class="page-header">
             <div class="page-title">
@@ -261,9 +387,8 @@
 
           <div class="table-card" style="padding: 28px; max-width: 700px;">
             <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px;">
-              Jika Anda ingin data tersimpan secara global di cloud (bisa diakses siapa saja lewat URL Vercel), 
-              masukkan <strong>Project URL</strong> dan <strong>Anon Public Key</strong> dari dashboard Supabase Anda. 
-              Jika dikosongkan, aplikasi otomatis menggunakan local database browser (IndexedDB/LocalStorage).
+              Jika ingin data tersimpan secara global di cloud (bisa diakses siapa saja lewat URL Vercel), 
+              masukkan <strong>Project URL</strong> dan <strong>Anon Public Key</strong> dari dashboard Supabase Anda.
             </p>
 
             <form id="supabase-config-form">
@@ -288,10 +413,10 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- 3. MODAL FORMS                             -->
+  <!-- 4. MODALS DIALOGS (ADMIN ONLY)            -->
   <!-- ========================================== -->
 
-  <!-- Modal Siswa (Tambah / Edit) -->
+  <!-- Modal Siswa -->
   <div id="modal-siswa" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
@@ -359,7 +484,7 @@
     </div>
   </div>
 
-  <!-- Modal Prodi (Tambah / Edit) -->
+  <!-- Modal Prodi -->
   <div id="modal-prodi" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
@@ -388,7 +513,6 @@
     </div>
   </div>
 
-  <!-- Main JavaScript File -->
   <script src="script.js"></script>
 </body>
 </html>

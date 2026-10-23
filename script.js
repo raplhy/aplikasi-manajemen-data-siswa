@@ -1,11 +1,11 @@
 /**
- * SCRIPT.JS - COMPLETE CLIENT ENGINE & DATABASE LAYER
+ * SCRIPT.JS - ENGINE, ROUTER & DUAL ACCESS LEVEL (PUBLIC / ADMIN)
  * Sistem Manajemen Data Siswa (SMKS PGRI 3 Malang)
- * Mendukung Supabase PostgreSQL REST Cloud & Local Storage Fallback
+ * Kredensial Khusus Admin: user -> raplhy, pass -> r4plhy123
  */
 
 // ==========================================
-// 1. STATE & DATABASE CONFIGURATION
+// 1. STATE & DEFAULT DATA
 // ==========================================
 const DEFAULT_PRODI = [
   { id_prodi: 1, kd_prodi: 'RPL', nama_prodi: 'Rekayasa Perangkat Lunak' },
@@ -26,6 +26,10 @@ const DEFAULT_SISWA = [
     foto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'
   }
 ];
+
+// Kredensial Admin Khusus
+const ADMIN_USER = 'raplhy';
+const ADMIN_PASS = 'r4plhy123';
 
 let supabaseClient = null;
 let currentView = 'home';
@@ -84,9 +88,8 @@ const DB = {
       try {
         const { data, error } = await supabaseClient.from('prodi').select('*').order('kd_prodi', { ascending: true });
         if (!error && data) return data;
-        console.warn('Supabase getProdi fallback:', error);
       } catch (err) {
-        console.warn('Supabase query error:', err);
+        console.warn('Supabase getProdi err:', err);
       }
     }
     const raw = localStorage.getItem('db_prodi');
@@ -150,9 +153,8 @@ const DB = {
       try {
         const { data, error } = await supabaseClient.from('siswa').select('*').order('id', { ascending: false });
         if (!error && data) return data;
-        console.warn('Supabase getSiswa fallback:', error);
       } catch (err) {
-        console.warn('Supabase query error:', err);
+        console.warn('Supabase getSiswa err:', err);
       }
     }
     const raw = localStorage.getItem('db_siswa');
@@ -230,20 +232,50 @@ function updateGreetings() {
 
   const now = new Date();
   const jam = now.getHours();
-  let ucapan = 'Selamat Datang!';
-  if (jam >= 4 && jam < 11) ucapan = 'Selamat Pagi! 🌅';
-  else if (jam >= 11 && jam < 15) ucapan = 'Selamat Siang! ☀️';
-  else if (jam >= 15 && jam < 18) ucapan = 'Selamat Sore! 🌇';
-  else ucapan = 'Selamat Malam! 🌙';
+  let ucapan = 'Selamat Datang';
+  if (jam >= 4 && jam < 11) ucapan = 'Selamat Pagi';
+  else if (jam >= 11 && jam < 15) ucapan = 'Selamat Siang';
+  else if (jam >= 15 && jam < 18) ucapan = 'Selamat Sore';
+  else ucapan = 'Selamat Malam';
 
-  greetingEl.textContent = `${ucapan} Petugas Data`;
+  greetingEl.textContent = `${ucapan}, raplhy!`;
   dateEl.textContent = `Tanggal: ${now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
 }
 
 // ==========================================
-// 4. NAVIGATION & VIEW CONTROLLER
+// 4. ROUTER: PUBLIC vs ADMIN
 // ==========================================
-function switchView(viewName) {
+function checkRoute() {
+  const hash = window.location.hash.toLowerCase();
+  const path = window.location.pathname.toLowerCase();
+  const isAdminPath = path.endsWith('/admin') || hash === '#admin' || hash === '#/admin';
+  const isLoggedIn = sessionStorage.getItem('is_admin_login') === 'true';
+
+  const publicView = document.getElementById('public-view');
+  const loginScreen = document.getElementById('login-screen');
+  const appLayout = document.getElementById('app-layout');
+
+  if (isAdminPath) {
+    if (isLoggedIn) {
+      publicView.style.display = 'none';
+      loginScreen.style.display = 'none';
+      appLayout.style.display = 'flex';
+      switchAdminView('home');
+    } else {
+      publicView.style.display = 'none';
+      appLayout.style.display = 'none';
+      loginScreen.style.display = 'flex';
+    }
+  } else {
+    // Tampilan default untuk umum (Public User)
+    loginScreen.style.display = 'none';
+    appLayout.style.display = 'none';
+    publicView.style.display = 'flex';
+    loadPublicData();
+  }
+}
+
+function switchAdminView(viewName) {
   currentView = viewName;
   document.querySelectorAll('.page-view').forEach(el => el.style.display = 'none');
   const target = document.getElementById(`view-${viewName}`);
@@ -255,25 +287,115 @@ function switchView(viewName) {
 
   const label = document.getElementById('current-page-label');
   if (label) {
-    if (viewName === 'home') label.textContent = 'Dashboard';
+    if (viewName === 'home') label.textContent = 'Dashboard Administrator';
     else if (viewName === 'siswa') label.textContent = 'Manajemen Data Siswa';
     else if (viewName === 'prodi') label.textContent = 'Program Studi';
     else if (viewName === 'settings') label.textContent = 'Pengaturan Database';
   }
 
-  // Auto Refresh View Data
-  if (viewName === 'home') loadDashboard();
-  else if (viewName === 'siswa') renderSiswaTable();
-  else if (viewName === 'prodi') renderProdiTable();
+  if (viewName === 'home') loadAdminDashboard();
+  else if (viewName === 'siswa') renderAdminSiswaTable();
+  else if (viewName === 'prodi') renderAdminProdiTable();
 
-  // Close sidebar on mobile
   document.getElementById('sidebar')?.classList.remove('open');
 }
 
 // ==========================================
-// 5. RENDER FUNCTIONS
+// 5. PUBLIC PORTAL ENGINE (USER BIASA)
 // ==========================================
-async function loadDashboard() {
+async function loadPublicData() {
+  try {
+    prodiList = await DB.getProdi();
+    siswaList = await DB.getSiswa();
+
+    document.getElementById('public-stat-siswa').textContent = siswaList.length;
+    document.getElementById('public-stat-prodi').textContent = prodiList.length;
+
+    populatePublicFilter();
+    renderPublicSiswaTable();
+    renderPublicProdiCards();
+  } catch (err) {
+    console.error('Error load public data:', err);
+  }
+}
+
+function populatePublicFilter() {
+  const filter = document.getElementById('public-filter-prodi');
+  if (!filter) return;
+  const curr = filter.value;
+  filter.innerHTML = '<option value="">Semua Program Studi</option>';
+  prodiList.forEach(p => {
+    filter.innerHTML += `<option value="${escapeHtml(p.kd_prodi)}">${escapeHtml(p.kd_prodi)} - ${escapeHtml(p.nama_prodi)}</option>`;
+  });
+  filter.value = curr;
+}
+
+function renderPublicSiswaTable() {
+  const tbody = document.getElementById('public-tbody-siswa');
+  const search = document.getElementById('public-search-input')?.value.toLowerCase().trim() || '';
+  const filterProdi = document.getElementById('public-filter-prodi')?.value || '';
+
+  let filtered = siswaList.filter(s => {
+    const matchSearch = (s.nama || '').toLowerCase().includes(search) || (s.nis || '').toLowerCase().includes(search);
+    const matchProdi = filterProdi === '' || s.kd_prodi === filterProdi;
+    return matchSearch && matchProdi;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 30px; color: var(--text-muted);">Tidak ada data siswa ditemukan.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(s => {
+    const prodiObj = prodiList.find(p => p.kd_prodi.toUpperCase() === (s.kd_prodi || '').toUpperCase());
+    const namaProdi = prodiObj ? prodiObj.nama_prodi : s.kd_prodi;
+    const genderBadge = s.jenis_kelamin === 'P' ? '<span class="badge-tag badge-female">Perempuan</span>' : '<span class="badge-tag">Laki-laki</span>';
+    const fotoUrl = s.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(s.nama)}&background=1f4e79&color=fff`;
+
+    return `
+      <tr>
+        <td>
+          <img src="${escapeHtml(fotoUrl)}" alt="${escapeHtml(s.nama)}" class="student-avatar" onerror="this.src='https://ui-avatars.com/api/?name=User&background=334155&color=fff'">
+        </td>
+        <td style="font-family: monospace; font-weight: 600;">${escapeHtml(s.nis)}</td>
+        <td style="font-weight: 600;">${escapeHtml(s.nama)}</td>
+        <td>${escapeHtml(s.kelas)}</td>
+        <td>${escapeHtml(s.tahun_ajaran)}</td>
+        <td><span class="badge-tag">${escapeHtml(s.kd_prodi)}</span> <span style="font-size: 12px; color: var(--text-muted);">${escapeHtml(namaProdi)}</span></td>
+        <td>${genderBadge}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderPublicProdiCards() {
+  const container = document.getElementById('public-prodi-cards');
+  if (!container) return;
+
+  if (prodiList.length === 0) {
+    container.innerHTML = '<p style="color: var(--text-muted);">Belum ada program keahlian.</p>';
+    return;
+  }
+
+  container.innerHTML = prodiList.map(p => {
+    const studentCount = siswaList.filter(s => s.kd_prodi.toUpperCase() === p.kd_prodi.toUpperCase()).length;
+    return `
+      <div class="prodi-card-item">
+        <span class="prodi-badge">${escapeHtml(p.kd_prodi)}</span>
+        <h3>${escapeHtml(p.nama_prodi)}</h3>
+        <p>SMKS PGRI 3 Malang</p>
+        <div style="margin-top: 14px; font-size: 13px; font-weight: 600; color: #60a5fa;">
+          👥 ${studentCount} Siswa Terdaftar
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ==========================================
+// 6. ADMIN DASHBOARD & CRUD ENGINE
+// ==========================================
+async function loadAdminDashboard() {
   updateGreetings();
   try {
     prodiList = await DB.getProdi();
@@ -282,14 +404,14 @@ async function loadDashboard() {
     document.getElementById('stat-total-siswa').textContent = siswaList.length;
     document.getElementById('stat-total-prodi').textContent = prodiList.length;
   } catch (err) {
-    console.error('Error loading dashboard:', err);
+    console.error('Error load admin dashboard:', err);
   }
 }
 
-async function renderProdiTable() {
+async function renderAdminProdiTable() {
   const tbody = document.getElementById('tbody-prodi');
   const search = document.getElementById('search-prodi')?.value.toLowerCase().trim() || '';
-  tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 25px;">Memuat data program studi...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 25px;">Memuat data...</td></tr>';
 
   try {
     prodiList = await DB.getProdi();
@@ -301,7 +423,7 @@ async function renderProdiTable() {
     );
 
     if (filtered.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--text-muted);">Tidak ada data program studi ditemukan.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--text-muted);">Tidak ada data program studi.</td></tr>';
       return;
     }
 
@@ -326,7 +448,7 @@ async function renderProdiTable() {
   }
 }
 
-async function renderSiswaTable() {
+async function renderAdminSiswaTable() {
   const tbody = document.getElementById('tbody-siswa');
   const search = document.getElementById('search-siswa')?.value.toLowerCase().trim() || '';
   const filterProdi = document.getElementById('filter-prodi')?.value || '';
@@ -335,7 +457,7 @@ async function renderSiswaTable() {
   try {
     siswaList = await DB.getSiswa();
     prodiList = await DB.getProdi();
-    populateProdiDropdowns();
+    populateAdminProdiDropdowns();
 
     let filtered = siswaList.filter(s => {
       const matchSearch = (s.nama || '').toLowerCase().includes(search) || (s.nis || '').toLowerCase().includes(search);
@@ -379,7 +501,7 @@ async function renderSiswaTable() {
   }
 }
 
-function populateProdiDropdowns() {
+function populateAdminProdiDropdowns() {
   const filter = document.getElementById('filter-prodi');
   const modalSelect = document.getElementById('siswa-prodi');
   if (!filter || !modalSelect) return;
@@ -400,7 +522,7 @@ function populateProdiDropdowns() {
 }
 
 // ==========================================
-// 6. MODALS & FORMS HANDLERS
+// 7. MODALS & FORMS
 // ==========================================
 function openModal(id) {
   document.getElementById(id)?.classList.add('active');
@@ -410,7 +532,6 @@ function closeModal(id) {
   document.getElementById(id)?.classList.remove('active');
 }
 
-// PRODI MODAL
 function openAddProdi() {
   document.getElementById('modal-prodi-title').textContent = 'Tambah Program Studi';
   document.getElementById('prodi-id').value = '';
@@ -436,14 +557,13 @@ window.confirmDeleteProdi = async function(id, kd_prodi) {
   try {
     await DB.deleteProdi(id, kd_prodi);
     showToast(`Program Studi ${kd_prodi} berhasil dihapus!`, 'success');
-    renderProdiTable();
-    loadDashboard();
+    renderAdminProdiTable();
+    loadAdminDashboard();
   } catch (err) {
     showToast(err.message, 'error');
   }
 };
 
-// SISWA MODAL
 function openAddSiswa() {
   document.getElementById('modal-siswa-title').textContent = 'Tambah Data Siswa';
   document.getElementById('siswa-id').value = '';
@@ -491,16 +611,13 @@ window.confirmDeleteSiswa = async function(id) {
   try {
     await DB.deleteSiswa(id);
     showToast('Data siswa berhasil dihapus!', 'success');
-    renderSiswaTable();
-    loadDashboard();
+    renderAdminSiswaTable();
+    loadAdminDashboard();
   } catch (err) {
     showToast(err.message, 'error');
   }
 };
 
-// ==========================================
-// 7. FILE TO BASE64 HELPER
-// ==========================================
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -526,66 +643,80 @@ function escapeHtml(str) {
 document.addEventListener('DOMContentLoaded', () => {
   DB.init();
 
-  // Check Login Session
-  const isLoggedIn = sessionStorage.getItem('is_login') === 'true';
-  if (isLoggedIn) {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app-layout').style.display = 'flex';
-    document.getElementById('user-display').textContent = sessionStorage.getItem('user_name') || 'Admin';
-    switchView('home');
-  } else {
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('app-layout').style.display = 'none';
-  }
+  // Initial Route Check
+  checkRoute();
+  window.addEventListener('hashchange', checkRoute);
+  window.addEventListener('popstate', checkRoute);
 
-  // LOGIN FORM
+  // ADMIN LOGIN TRIGGER
+  document.getElementById('btn-go-admin')?.addEventListener('click', () => {
+    window.location.hash = 'admin';
+  });
+
+  document.getElementById('btn-back-to-public')?.addEventListener('click', () => {
+    window.location.hash = '';
+    window.history.pushState({}, '', '/');
+    checkRoute();
+  });
+
+  document.getElementById('btn-view-as-public')?.addEventListener('click', () => {
+    window.location.hash = '';
+    window.history.pushState({}, '', '/');
+    checkRoute();
+  });
+
+  // ADMIN LOGIN SUBMISSION
   document.getElementById('login-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const user = document.getElementById('login-username').value.trim();
     const pass = document.getElementById('login-password').value;
 
-    if (user === 'admin' && pass === 'admin123') {
-      sessionStorage.setItem('is_login', 'true');
+    if (user === ADMIN_USER && pass === ADMIN_PASS) {
+      sessionStorage.setItem('is_admin_login', 'true');
       sessionStorage.setItem('user_name', user);
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('app-layout').style.display = 'flex';
-      showToast('Berhasil login! Selamat datang.', 'success');
-      switchView('home');
+      showToast(`Berhasil login sebagai ${user}!`, 'success');
+      document.getElementById('login-username').value = '';
+      document.getElementById('login-password').value = '';
+      checkRoute();
     } else {
-      showToast('Username atau Password salah!', 'error');
+      showToast('Username atau Password administrator salah!', 'error');
     }
   });
 
-  // LOGOUT
+  // ADMIN LOGOUT
   document.getElementById('btn-logout').addEventListener('click', () => {
-    sessionStorage.removeItem('is_login');
+    sessionStorage.removeItem('is_admin_login');
     sessionStorage.removeItem('user_name');
-    document.getElementById('app-layout').style.display = 'none';
-    document.getElementById('login-screen').style.display = 'flex';
-    showToast('Berhasil logout dari sistem.', 'info');
+    window.location.hash = '';
+    window.history.pushState({}, '', '/');
+    showToast('Telah keluar dari sesi administrator.', 'info');
+    checkRoute();
   });
 
-  // NAVIGATION CLICKS
-  document.querySelectorAll('.sidebar-nav .nav-link').forEach(link => {
+  // PUBLIC SEARCH & FILTER
+  document.getElementById('public-search-input')?.addEventListener('input', renderPublicSiswaTable);
+  document.getElementById('btn-public-search')?.addEventListener('click', renderPublicSiswaTable);
+  document.getElementById('public-filter-prodi')?.addEventListener('change', renderPublicSiswaTable);
+
+  // ADMIN NAVIGATION
+  document.querySelectorAll('.sidebar-nav .nav-link[data-view]').forEach(link => {
     link.addEventListener('click', () => {
       const view = link.getAttribute('data-view');
-      if (view) switchView(view);
+      if (view) switchAdminView(view);
     });
   });
 
   document.querySelectorAll('[data-view-target]').forEach(btn => {
     btn.addEventListener('click', () => {
       const target = btn.getAttribute('data-view-target');
-      if (target) switchView(target);
+      if (target) switchAdminView(target);
     });
   });
 
-  // MOBILE SIDEBAR TOGGLE
   document.getElementById('menu-toggle')?.addEventListener('click', () => {
     document.getElementById('sidebar')?.classList.toggle('open');
   });
 
-  // CLOSE MODALS
   document.querySelectorAll('[data-close-modal]').forEach(btn => {
     btn.addEventListener('click', () => {
       const modalId = btn.getAttribute('data-close-modal');
@@ -593,19 +724,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // BUTTON TRIGGERS
+  // ADMIN CRUD BUTTONS
   document.getElementById('btn-quick-add-siswa')?.addEventListener('click', openAddSiswa);
   document.getElementById('btn-open-add-siswa')?.addEventListener('click', openAddSiswa);
   document.getElementById('btn-open-add-prodi')?.addEventListener('click', openAddProdi);
 
-  document.getElementById('btn-refresh-siswa')?.addEventListener('click', renderSiswaTable);
-  document.getElementById('btn-refresh-prodi')?.addEventListener('click', renderProdiTable);
+  document.getElementById('btn-refresh-siswa')?.addEventListener('click', renderAdminSiswaTable);
+  document.getElementById('btn-refresh-prodi')?.addEventListener('click', renderAdminProdiTable);
 
-  document.getElementById('search-siswa')?.addEventListener('input', renderSiswaTable);
-  document.getElementById('filter-prodi')?.addEventListener('change', renderSiswaTable);
-  document.getElementById('search-prodi')?.addEventListener('input', renderProdiTable);
+  document.getElementById('search-siswa')?.addEventListener('input', renderAdminSiswaTable);
+  document.getElementById('filter-prodi')?.addEventListener('change', renderAdminSiswaTable);
+  document.getElementById('search-prodi')?.addEventListener('input', renderAdminProdiTable);
 
-  // FOTO PREVIEW HANDLER
+  // FOTO PREVIEW
   document.getElementById('siswa-foto-file')?.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -621,7 +752,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // FORM SUBMIT: PRODI
+  // SUBMIT PRODI
   document.getElementById('form-prodi')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = document.getElementById('prodi-id').value;
@@ -631,20 +762,20 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       if (id) {
         await DB.updateProdi(id, { kd_prodi, nama_prodi });
-        showToast('Data Program Studi berhasil diperbarui!', 'success');
+        showToast('Program Studi berhasil diperbarui!', 'success');
       } else {
         await DB.insertProdi({ kd_prodi, nama_prodi });
-        showToast('Program Studi baru berhasil disimpan!', 'success');
+        showToast('Program Studi berhasil ditambahkan!', 'success');
       }
       closeModal('modal-prodi');
-      renderProdiTable();
-      loadDashboard();
+      renderAdminProdiTable();
+      loadAdminDashboard();
     } catch (err) {
       showToast(err.message, 'error');
     }
   });
 
-  // FORM SUBMIT: SISWA
+  // SUBMIT SISWA
   document.getElementById('form-siswa')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = document.getElementById('siswa-id').value;
@@ -671,14 +802,14 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('Data siswa berhasil ditambahkan!', 'success');
       }
       closeModal('modal-siswa');
-      renderSiswaTable();
-      loadDashboard();
+      renderAdminSiswaTable();
+      loadAdminDashboard();
     } catch (err) {
       showToast(err.message, 'error');
     }
   });
 
-  // SUPABASE CONFIG FORM
+  // SUPABASE CONFIG
   const creds = DB.getCredentials();
   if (document.getElementById('supabase-url')) document.getElementById('supabase-url').value = creds.url;
   if (document.getElementById('supabase-key')) document.getElementById('supabase-key').value = creds.key;
@@ -692,7 +823,7 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('supabase_key', key);
     DB.init();
     showToast('Konfigurasi Supabase berhasil disimpan!', 'success');
-    loadDashboard();
+    loadAdminDashboard();
   });
 
   document.getElementById('btn-reset-db')?.addEventListener('click', () => {
@@ -702,6 +833,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('supabase-key').value = '';
     DB.init();
     showToast('Berhasil beralih ke Local Browser Storage.', 'info');
-    loadDashboard();
+    loadAdminDashboard();
   });
 });
