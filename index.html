@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Manajemen Data Siswa - SMKS PGRI 3 Malang</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Supabase JS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- ========================================== -->
+  <!-- 1. LOGIN SCREEN                           -->
+  <!-- ========================================== -->
+  <div id="login-screen" class="login-wrapper">
+    <div class="login-card">
+      <div class="brand-header">
+        <div class="brand-icon">🎓</div>
+        <h2>PANEL LOGIN</h2>
+        <p>Sistem Manajemen Data Siswa SMKS PGRI 3</p>
+      </div>
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label" for="login-username">Username</label>
+          <input type="text" id="login-username" class="form-input" placeholder="Masukkan username" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="login-password">Password</label>
+          <input type="password" id="login-password" class="form-input" placeholder="Masukkan password" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">
+          <span>Masuk ke Dashboard</span> →
+        </button>
+      </form>
+
+      <div class="demo-credentials">
+        🔑 <strong>Akun Demo:</strong><br>
+        Username: <strong>admin</strong> | Password: <strong>admin123</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 2. MAIN APP LAYOUT (DASHBOARD)            -->
+  <!-- ========================================== -->
+  <div id="app-layout" class="app-layout" style="display: none;">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">🎓</div>
+        <div class="sidebar-title">
+          <h3>SMKS PGRI 3</h3>
+          <span>Sistem Manajemen</span>
+        </div>
+      </div>
+
+      <ul class="sidebar-nav">
+        <li>
+          <a class="nav-link active" data-view="home">
+            <span class="icon">🏠</span>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-link" data-view="siswa">
+            <span class="icon">👨‍🎓</span>
+            <span>Data Siswa</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-link" data-view="prodi">
+            <span class="icon">📚</span>
+            <span>Program Studi</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-link" data-view="settings">
+            <span class="icon">⚡</span>
+            <span>Database Cloud</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div class="avatar" id="user-avatar">A</div>
+          <div class="user-info">
+            <span class="name" id="user-display">Administrator</span>
+            <span class="role">Admin Utama</span>
+          </div>
+        </div>
+        <button id="btn-logout" class="btn btn-danger btn-block btn-sm">
+          <span>Logout</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+      <!-- Top Sticky Bar -->
+      <header class="top-bar">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <button id="menu-toggle" class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <span id="current-page-label" style="font-weight: 600; font-size: 15px; color: var(--text-secondary);">Dashboard</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div id="db-status-badge" class="status-badge" title="Status koneksi database">
+            <span class="status-dot"></span>
+            <span id="db-status-text">Client Mode (Local)</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content Body -->
+      <main class="content-body">
+        
+        <!-- VIEW: HOME (DASHBOARD) -->
+        <section id="view-home" class="page-view">
+          <div class="page-header">
+            <div class="page-title">
+              <h1 id="greeting-text">Selamat Datang!</h1>
+              <p id="today-date-text">Memuat tanggal...</p>
+            </div>
+            <button class="btn btn-primary" id="btn-quick-add-siswa">+ Tambah Siswa Cepat</button>
+          </div>
+
+          <!-- Stats Grid -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-info">
+                <p>Total Siswa Aktif</p>
+                <h3 id="stat-total-siswa">0</h3>
+              </div>
+              <div class="stat-icon icon-blue">👨‍🎓</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-info">
+                <p>Total Program Keahlian</p>
+                <h3 id="stat-total-prodi">0</h3>
+              </div>
+              <div class="stat-icon icon-purple">📚</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-info">
+                <p>Sistem Database</p>
+                <h3 id="stat-db-mode" style="font-size: 20px; font-weight: 700;">Supabase</h3>
+              </div>
+              <div class="stat-icon icon-green">⚡</div>
+            </div>
+          </div>
+
+          <!-- Welcome Banner Card -->
+          <div class="table-card" style="padding: 32px; background: linear-gradient(135deg, rgba(37,99,235,0.15), rgba(139,92,246,0.1));">
+            <h2 style="font-size: 22px; margin-bottom: 8px;">Aplikasi Manajemen Data Siswa SMKS PGRI 3 Malang</h2>
+            <p style="color: var(--text-secondary); max-width: 700px; line-height: 1.6; margin-bottom: 20px;">
+              Aplikasi ini telah dimigrasikan dari PHP & MySQL menjadi <strong>Modern HTML5, CSS3 Glassmorphism, dan JavaScript (Supabase PostgreSQL Cloud)</strong>. 
+              Siap dideploy 100% tanpa error file download di Vercel atau GitHub Pages.
+            </p>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <button class="btn btn-primary" data-view-target="siswa">Kelola Data Siswa →</button>
+              <button class="btn btn-secondary" data-view-target="prodi">Kelola Program Studi →</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: SISWA -->
+        <section id="view-siswa" class="page-view" style="display: none;">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Kelola Data Siswa</h1>
+              <p>Daftar seluruh siswa SMKS PGRI 3 Malang</p>
+            </div>
+            <button class="btn btn-primary" id="btn-open-add-siswa">+ Tambah Siswa Baru</button>
+          </div>
+
+          <div class="table-card">
+            <div class="table-toolbar">
+              <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="search-siswa" placeholder="Cari NIS atau Nama Siswa...">
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <select id="filter-prodi" class="form-select" style="width: auto; padding: 8px 12px;">
+                  <option value="">Semua Program Studi</option>
+                </select>
+                <button id="btn-refresh-siswa" class="btn btn-secondary btn-sm">↻ Refresh</button>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Foto</th>
+                    <th>NIS</th>
+                    <th>Nama Lengkap</th>
+                    <th>Kelas</th>
+                    <th>Tahun Ajaran</th>
+                    <th>Program Studi</th>
+                    <th>Gender</th>
+                    <th style="text-align: right;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-siswa">
+                  <tr><td colspan="8" style="text-align: center; padding: 30px;">Memuat data siswa...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: PRODI -->
+        <section id="view-prodi" class="page-view" style="display: none;">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Program Studi (Keahlian)</h1>
+              <p>Daftar program studi dan kompetensi keahlian</p>
+            </div>
+            <button class="btn btn-primary" id="btn-open-add-prodi">+ Tambah Prodi Baru</button>
+          </div>
+
+          <div class="table-card">
+            <div class="table-toolbar">
+              <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="search-prodi" placeholder="Cari Kode atau Nama Prodi...">
+              </div>
+              <button id="btn-refresh-prodi" class="btn btn-secondary btn-sm">↻ Refresh</button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Kode Prodi</th>
+                    <th>Nama Program Studi</th>
+                    <th>Jumlah Siswa</th>
+                    <th style="text-align: right;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-prodi">
+                  <tr><td colspan="4" style="text-align: center; padding: 30px;">Memuat data prodi...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: SETTINGS (SUPABASE CLOUD CONFIG) -->
+        <section id="view-settings" class="page-view" style="display: none;">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Konfigurasi Supabase PostgreSQL</h1>
+              <p>Hubungkan website langsung ke Cloud Database Supabase</p>
+            </div>
+          </div>
+
+          <div class="table-card" style="padding: 28px; max-width: 700px;">
+            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px;">
+              Jika Anda ingin data tersimpan secara global di cloud (bisa diakses siapa saja lewat URL Vercel), 
+              masukkan <strong>Project URL</strong> dan <strong>Anon Public Key</strong> dari dashboard Supabase Anda. 
+              Jika dikosongkan, aplikasi otomatis menggunakan local database browser (IndexedDB/LocalStorage).
+            </p>
+
+            <form id="supabase-config-form">
+              <div class="form-group">
+                <label class="form-label" for="supabase-url">Supabase Project URL</label>
+                <input type="url" id="supabase-url" class="form-input" placeholder="https://xyzcompany.supabase.co">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="supabase-key">Supabase Anon Key</label>
+                <input type="password" id="supabase-key" class="form-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+              </div>
+              <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button type="submit" class="btn btn-primary">Simpan & Hubungkan</button>
+                <button type="button" id="btn-reset-db" class="btn btn-secondary">Gunakan Local Browser Storage</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 3. MODAL FORMS                             -->
+  <!-- ========================================== -->
+
+  <!-- Modal Siswa (Tambah / Edit) -->
+  <div id="modal-siswa" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-siswa-title">Tambah Siswa</h3>
+        <button class="btn-close-modal" data-close-modal="modal-siswa">&times;</button>
+      </div>
+      <form id="form-siswa">
+        <div class="modal-body">
+          <input type="hidden" id="siswa-id">
+          
+          <div class="form-group">
+            <label class="form-label" for="siswa-nis">Nomor Induk Siswa (NIS) *</label>
+            <input type="text" id="siswa-nis" class="form-input" required placeholder="Contoh: 25999">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="siswa-nama">Nama Lengkap Siswa *</label>
+            <input type="text" id="siswa-nama" class="form-input" required placeholder="Nama lengkap">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label class="form-label" for="siswa-kelas">Kelas *</label>
+              <input type="text" id="siswa-kelas" class="form-input" required placeholder="Contoh: 10, 11, atau 12">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="siswa-tahun">Tahun Ajaran *</label>
+              <input type="text" id="siswa-tahun" class="form-input" required placeholder="Contoh: 2025/2026">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="siswa-prodi">Program Studi *</label>
+            <select id="siswa-prodi" class="form-select" required>
+              <option value="">-- Pilih Program Studi --</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Jenis Kelamin *</label>
+            <div style="display: flex; gap: 20px; margin-top: 6px;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="radio" name="siswa-gender" value="L" checked> Laki-laki
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="radio" name="siswa-gender" value="P"> Perempuan
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="siswa-foto-file">Foto Siswa (File atau URL Gambar)</label>
+            <input type="file" id="siswa-foto-file" class="form-input" accept="image/*" style="margin-bottom: 8px;">
+            <input type="url" id="siswa-foto-url" class="form-input" placeholder="Atau tempelkan URL Gambar (opsional)">
+            <div id="foto-preview-container" style="margin-top: 10px; display: none;">
+              <img id="foto-preview-img" src="" alt="Preview" style="width: 70px; height: 70px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border-color);">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close-modal="modal-siswa">Batal</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-siswa">Simpan Data Siswa</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Prodi (Tambah / Edit) -->
+  <div id="modal-prodi" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-prodi-title">Tambah Program Studi</h3>
+        <button class="btn-close-modal" data-close-modal="modal-prodi">&times;</button>
+      </div>
+      <form id="form-prodi">
+        <div class="modal-body">
+          <input type="hidden" id="prodi-id">
+          
+          <div class="form-group">
+            <label class="form-label" for="prodi-kd">Kode Program Studi *</label>
+            <input type="text" id="prodi-kd" class="form-input" required placeholder="Contoh: RPL, DKV, TKR" maxlength="10">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="prodi-nama">Nama Program Studi *</label>
+            <input type="text" id="prodi-nama" class="form-input" required placeholder="Contoh: Rekayasa Perangkat Lunak">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close-modal="modal-prodi">Batal</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-prodi">Simpan Data Prodi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main JavaScript File -->
+  <script src="script.js"></script>
+</body>
+</html>
